@@ -7,6 +7,7 @@ import {
   ONBOARDING_REVIEW_SRP_ROUTE,
   ONBOARDING_CONFIRM_SRP_ROUTE,
   ONBOARDING_UNLOCK_ROUTE,
+  ONBOARDING_WELCOME,
   DEFAULT_ROUTE,
   ONBOARDING_SECURE_YOUR_WALLET_ROUTE,
   ONBOARDING_PRIVACY_SETTINGS_ROUTE,
@@ -28,6 +29,7 @@ import ReviewRecoveryPhrase from './recovery-phrase/review-recovery-phrase';
 import SecureYourWallet from './secure-your-wallet/secure-your-wallet';
 import ConfirmRecoveryPhrase from './recovery-phrase/confirm-recovery-phrase';
 import PrivacySettings from './privacy-settings/privacy-settings';
+import OnboardingWelcome from './welcome/welcome';
 
 export default function OnboardingFlow() {
   const [seedPhrase, setSeedPhrase] = useState('');
@@ -43,7 +45,7 @@ export default function OnboardingFlow() {
     // For ONBOARDING_V2 dev purposes,
     // Remove when ONBOARDING_V2 dev complete
     if (process.env.ONBOARDING_V2) {
-      history.push(ONBOARDING_PRIVACY_SETTINGS_ROUTE);
+      history.push(ONBOARDING_WELCOME);
       return;
     }
 
@@ -112,7 +114,10 @@ export default function OnboardingFlow() {
           />
           <Route
             path={ONBOARDING_PRIVACY_SETTINGS_ROUTE}
-            component={PrivacySettings}
+            component={PrivacySettings} />
+          <Route
+            path={ONBOARDING_WELCOME}
+            render={() => <OnboardingWelcome />}
           />
           <Route exact path="*" component={OnboardingFlowSwitch} />
         </Switch>
