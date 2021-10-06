@@ -19,10 +19,16 @@ import {
 import FormField from '../../../components/ui/form-field';
 import Box from '../../../components/ui/box';
 import CheckBox from '../../../components/ui/check-box';
+import {
+  ThreeStepProgressBar,
+  threeStepStages,
+  TwoStepProgressBar,
+  twoStepStages,
+} from '../../../components/app/step-progress-bar';
 
 export default function NewAccount({
   createNewAccount,
-  importWithSeedPhrase,
+  importWithRecoveryPhrase,
   secretRecoveryPhrase,
 }) {
   const t = useI18nContext();
@@ -85,7 +91,7 @@ export default function NewAccount({
     }
     // If secretRecoveryPhrase is defined we are in import wallet flow
     if (secretRecoveryPhrase) {
-      await importWithSeedPhrase(password, secretRecoveryPhrase);
+      await importWithRecoveryPhrase(password, secretRecoveryPhrase);
       history.push(ONBOARDING_COMPLETION_ROUTE);
     } else {
       // Otherwise we are in create new wallet flow
@@ -103,6 +109,11 @@ export default function NewAccount({
 
   return (
     <div className="new-account__wrapper">
+      {secretRecoveryPhrase ? (
+        <TwoStepProgressBar stage={twoStepStages.PASSWORD_CREATE} />
+      ) : (
+        <ThreeStepProgressBar stage={threeStepStages.PASSWORD_CREATE} />
+      )}
       <Typography variant={TYPOGRAPHY.H2} fontWeight={FONT_WEIGHT.BOLD}>
         {t('createPassword')}
       </Typography>
@@ -193,5 +204,7 @@ export default function NewAccount({
 }
 
 NewAccount.propTypes = {
-  onSubmit: PropTypes.func,
+  createNewAccount: PropTypes.func,
+  importWithRecoveryPhrase: PropTypes.func,
+  secretRecoveryPhrase: PropTypes.string,
 };
