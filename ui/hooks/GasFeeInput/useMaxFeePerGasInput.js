@@ -1,27 +1,31 @@
 import { useState } from 'react';
 
 import { getMaximumGasTotalInHexWei } from '../../../shared/modules/gas.utils';
-import { hexWEIToDecGWEI } from '../../helpers/utils/conversions.util';
 import { SECONDARY } from '../../helpers/constants/common';
+import { GAS_ESTIMATE_TYPES } from '../../../shared/constants/gas';
+import {
+  decGWEIToHexWEI,
+  hexWEIToDecGWEI,
+  decimalToHex,
+} from '../../helpers/utils/conversions.util';
 
 import { useCurrencyDisplay } from '../useCurrencyDisplay';
-import { useGasFeeEstimates } from '../useGasFeeEstimates';
 import { useUserPreferencedCurrency } from '../useUserPreferencedCurrency';
 import { getGasFeeEstimate } from './utils';
 
-export function useMaxFeePerGasInput(
+export function useMaxFeePerGasInput({
   estimateToUse,
+  gasEstimateType,
+  gasFeeEstimates,
   gasLimit,
   gasPrice,
   supportsEIP1559,
   transaction,
-) {
+}) {
   const {
     currency: fiatCurrency,
     numberOfDecimals: fiatNumberOfDecimals,
   } = useUserPreferencedCurrency(SECONDARY);
-
-  const { gasEstimateType, gasFeeEstimates } = useGasFeeEstimates();
 
   const [initialMaxFeePerGas] = useState(
     supportsEIP1559 && !transaction?.txParams?.maxFeePerGas
@@ -46,9 +50,14 @@ export function useMaxFeePerGasInput(
   );
 
   const maximumCostInHexWei = getMaximumGasTotalInHexWei({
-    gasLimit,
-    gasPrice,
-    maxFeePerGas,
+    gasLimit: decimalToHex(gasLimit),
+    gasPrice:
+      !supportsEIP1559 && gasEstimateType !== GAS_ESTIMATE_TYPES.NONE
+        ? decGWEIToHexWEI(gasPrice)
+        : undefined,
+    maxFeePerGas: supportsEIP1559
+      ? decGWEIToHexWEI(maxFeePerGas || gasPrice || '0')
+      : undefined,
   });
 
   // We need to display thee estimated fiat currency impact of the maxFeePerGas

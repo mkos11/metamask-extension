@@ -13,6 +13,7 @@ import { useGasFeeEstimates } from '../useGasFeeEstimates';
 import { useGasFeeErrors } from './useGasFeeErrors';
 import { useGasPriceInputs } from './useGasPriceInputs';
 import { useMaxFeePerGasInput } from './useMaxFeePerGasInput';
+import { useMaxPriorityFeePerGasInput } from './useMaxPriorityFeePerGasInput';
 import { useGasEstimates } from './useGasEstimates';
 
 /**
@@ -62,9 +63,9 @@ import { useGasEstimates } from './useGasEstimates';
  */
 export function useGasFeeInputs(
   defaultEstimateToUse = 'medium',
-  editGasMode,
-  minimumGasLimit = '0x5208',
   transaction,
+  minimumGasLimit = '0x5208',
+  editGasMode,
 ) {
   const supportsEIP1559 =
     useSelector(checkNetworkAndAccountSupports1559) &&
@@ -73,6 +74,7 @@ export function useGasFeeInputs(
   // We need the gas estimates from the GasFeeController in the background.
   // Calling this hooks initiates polling for new gas estimates and returns the
   // current estimate.
+  // todo: avoid calling in each hook
   const {
     gasEstimateType,
     gasFeeEstimates,
@@ -89,7 +91,8 @@ export function useGasFeeInputs(
       transaction?.txParams?.maxFeePerGas
     )
       return null;
-    return transaction?.userFeeLevel || defaultEstimateToUse;
+    if (transaction) return transaction?.userFeeLevel || null;
+    return defaultEstimateToUse;
   });
 
   const [gasLimit, setGasLimit] = useState(
@@ -100,48 +103,69 @@ export function useGasFeeInputs(
     gasPrice,
     setGasPrice,
     setGasPriceHasBeenManuallySet,
-  } = useGasPriceInputs();
+  } = useGasPriceInputs({
+    defaultEstimateToUse,
+    estimateToUse,
+    gasEstimateType,
+    gasFeeEstimates,
+    transaction,
+  });
 
   const {
     maxFeePerGas,
-    setMaxFeePerGas,
     maxFeePerGasFiat,
-  } = useMaxFeePerGasInput(
+    setMaxFeePerGas,
+  } = useMaxFeePerGasInput({
     estimateToUse,
+    gasEstimateType,
+    gasFeeEstimates,
     gasLimit,
     gasPrice,
     supportsEIP1559,
     transaction,
-  );
+  });
 
   const {
     maxPriorityFeePerGas,
-    setMaxPriorityFeePerGas,
     maxPriorityFeePerGasFiat,
-  } = useMaxFeePerGasInput(
+    setMaxPriorityFeePerGas,
+  } = useMaxPriorityFeePerGasInput({
     estimateToUse,
+    gasEstimateType,
+    gasFeeEstimates,
     gasLimit,
     supportsEIP1559,
     transaction,
-  );
+  });
 
   const {
-    estimatedMinimumFiat,
+    estimatedBaseFee,
     estimatedMaximumFiat,
+    estimatedMinimumFiat,
     estimatedMaximumNative,
     estimatedMinimumNative,
-    estimatedBaseFee,
     minimumCostInHexWei,
-  } = useGasEstimates(editGasMode);
+  } = useGasEstimates({
+    editGasMode,
+    gasEstimateType,
+    gasFeeEstimates,
+    gasLimit,
+    gasPrice,
+    maxFeePerGas,
+    maxFeePerGasFiat,
+    maxPriorityFeePerGas,
+    minimumGasLimit,
+    supportsEIP1559,
+  });
 
   const errorAndWarnings = useGasFeeErrors({
-    transaction,
     gasLimit,
     gasPrice,
     maxPriorityFeePerGas,
     maxFeePerGas,
     minimumCostInHexWei,
     minimumGasLimit,
+    transaction,
   });
 
   const handleGasLimitOutOfBoundError = useCallback(() => {

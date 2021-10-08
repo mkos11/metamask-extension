@@ -8,30 +8,35 @@ import { hexWEIToDecGWEI } from '../../helpers/utils/conversions.util';
 import { SECONDARY } from '../../helpers/constants/common';
 import { getShouldShowFiat } from '../../selectors';
 
-import { useGasFeeEstimates } from '../useGasFeeEstimates';
 import { useCurrencyDisplay } from '../useCurrencyDisplay';
 import { useUserPreferencedCurrency } from '../useUserPreferencedCurrency';
 import { getGasFeeEstimate } from './utils';
 
-export function useGasFeeInputs(
+export function useMaxPriorityFeePerGasInput({
   estimateToUse,
+  gasEstimateType,
+  gasFeeEstimates,
   gasLimit,
   supportsEIP1559,
   transaction,
-) {
+}) {
   const {
     currency: fiatCurrency,
     numberOfDecimals: fiatNumberOfDecimals,
   } = useUserPreferencedCurrency(SECONDARY);
 
-  const { gasEstimateType, gasFeeEstimates } = useGasFeeEstimates();
-
   const showFiat = useSelector(getShouldShowFiat);
+
+  const [initialMaxFeePerGas] = useState(
+    supportsEIP1559 && !transaction?.txParams?.maxFeePerGas
+      ? Number(hexWEIToDecGWEI(transaction?.txParams?.gasPrice))
+      : Number(hexWEIToDecGWEI(transaction?.txParams?.maxFeePerGas)),
+  );
 
   // fix initialMaxFeePerGas
   const [initialMaxPriorityFeePerGas] = useState(
     supportsEIP1559 && !transaction?.txParams?.maxPriorityFeePerGas
-      ? 0
+      ? initialMaxFeePerGas
       : Number(hexWEIToDecGWEI(transaction?.txParams?.maxPriorityFeePerGas)),
   );
 
@@ -62,7 +67,7 @@ export function useGasFeeInputs(
   // maxPriorityFeePerGas field to the user. This hook calculates that amount.
   const [, { value: maxPriorityFeePerGasFiat }] = useCurrencyDisplay(
     addHexPrefix(
-      multiplyCurrencies(maxPriorityFeePerGas, gasLimit, {
+      multiplyCurrencies(maxPriorityFeePerGasToUse, gasLimit, {
         toNumericBase: 'hex',
         fromDenomination: 'GWEI',
         toDenomination: 'WEI',

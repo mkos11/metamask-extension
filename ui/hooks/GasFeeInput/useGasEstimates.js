@@ -16,26 +16,25 @@ import {
   decimalToHex,
 } from '../../helpers/utils/conversions.util';
 
-import { useGasFeeEstimates } from '../useGasFeeEstimates';
 import { useCurrencyDisplay } from '../useCurrencyDisplay';
 import { useUserPreferencedCurrency } from '../useUserPreferencedCurrency';
 
-export function useGasEstimates(
+export function useGasEstimates({
+  editGasMode,
+  gasEstimateType,
+  gasFeeEstimates,
   gasLimit,
-  supportsEIP1559,
   gasPrice,
   maxFeePerGas,
-  maxPriorityFeePerGas,
-  editGasMode,
   maxFeePerGasFiat,
+  maxPriorityFeePerGas,
   minimumGasLimit,
-) {
+  supportsEIP1559,
+}) {
   const {
     currency: fiatCurrency,
     numberOfDecimals: fiatNumberOfDecimals,
   } = useUserPreferencedCurrency(SECONDARY);
-
-  const { gasEstimateType, gasFeeEstimates } = useGasFeeEstimates();
 
   const showFiat = useSelector(getShouldShowFiat);
 
@@ -51,31 +50,52 @@ export function useGasEstimates(
   // gas fees.
   const gasSettings = {
     gasLimit: decimalToHex(gasLimit),
-    gasPrice:
-      !supportsEIP1559 && gasEstimateType !== GAS_ESTIMATE_TYPES.NONE
-        ? decGWEIToHexWEI(gasPrice)
-        : undefined,
-    maxFeePerGas: supportsEIP1559
-      ? decGWEIToHexWEI(maxFeePerGas || gasPrice || '0')
-      : undefined,
-    maxPriorityFeePerGas: supportsEIP1559
-      ? decGWEIToHexWEI(maxPriorityFeePerGas || maxFeePerGas || gasPrice || '0')
-      : undefined,
-    baseFeePerGas: supportsEIP1559
-      ? decGWEIToHexWEI(gasFeeEstimates.estimatedBaseFee ?? '0')
-      : undefined,
   };
+  if (supportsEIP1559) {
+    gasSettings.maxFeePerGas = maxFeePerGas
+      ? decGWEIToHexWEI(maxFeePerGas)
+      : decGWEIToHexWEI(gasPrice || '0');
+    gasSettings.maxPriorityFeePerGas = maxPriorityFeePerGas
+      ? decGWEIToHexWEI(maxPriorityFeePerGas)
+      : gasSettings.maxFeePerGas;
+    gasSettings.baseFeePerGas = decGWEIToHexWEI(
+      gasFeeEstimates.estimatedBaseFee ?? '0',
+    );
+  } else if (gasEstimateType === GAS_ESTIMATE_TYPES.NONE) {
+    gasSettings.gasPrice = '0x0';
+  } else {
+    gasSettings.gasPrice = decGWEIToHexWEI(gasPrice);
+  }
+
+  // const gasSettings = {
+  //   gasLimit: decimalToHex(gasLimit || '0'),
+  //   gasPrice:
+  //     !supportsEIP1559 && gasEstimateType !== GAS_ESTIMATE_TYPES.NONE
+  //       ? decGWEIToHexWEI(gasPrice || '0')
+  //       : undefined,
+  //   maxFeePerGas: supportsEIP1559
+  //     ? decGWEIToHexWEI(maxFeePerGas || gasPrice || '0')
+  //     : undefined,
+  //   maxPriorityFeePerGas: supportsEIP1559
+  //     ? decGWEIToHexWEI(maxPriorityFeePerGas || maxFeePerGas || gasPrice || '0')
+  //     : undefined,
+  //   baseFeePerGas: supportsEIP1559
+  //     ? decGWEIToHexWEI(gasFeeEstimates.estimatedBaseFee ?? '0')
+  //     : undefined,
+  // };
 
   // The maximum amount this transaction will cost
   const maximumCostInHexWei = getMaximumGasTotalInHexWei(gasSettings);
 
+  const minGasSettings = {};
+  if (editGasMode === EDIT_GAS_MODES.SWAPS) {
+    minGasSettings.gasLimit = decimalToHex(minimumGasLimit);
+  }
+
   // The minimum amount this transaction will cost's
   const minimumCostInHexWei = getMinimumGasTotalInHexWei({
     ...gasSettings,
-    gasLimit:
-      editGasMode === EDIT_GAS_MODES.SWAPS
-        ? decimalToHex(minimumGasLimit)
-        : undefined,
+    ...minGasSettings,
   });
 
   // We need to display the total amount of native currency will be expended
@@ -108,5 +128,6 @@ export function useGasEstimates(
     estimatedBaseFee: supportsEIP1559
       ? decGWEIToHexWEI(gasFeeEstimates.estimatedBaseFee ?? '0')
       : undefined,
+    minimumCostInHexWei,
   };
 }

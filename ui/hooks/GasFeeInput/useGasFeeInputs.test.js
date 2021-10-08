@@ -21,11 +21,11 @@ import { useUserPreferencedCurrency } from '../useUserPreferencedCurrency';
 import { useGasFeeEstimates } from '../useGasFeeEstimates';
 import { useGasFeeInputs } from './useGasFeeInputs';
 
-jest.mock('./useUserPreferencedCurrency', () => ({
+jest.mock('../useUserPreferencedCurrency', () => ({
   useUserPreferencedCurrency: jest.fn(),
 }));
 
-jest.mock('./useGasFeeEstimates', () => ({
+jest.mock('../useGasFeeEstimates', () => ({
   useGasFeeEstimates: jest.fn(),
 }));
 

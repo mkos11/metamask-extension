@@ -1,13 +1,9 @@
 import { useState } from 'react';
-import { useSelector } from 'react-redux';
 import { isEqual } from 'lodash';
 
 import { GAS_ESTIMATE_TYPES } from '../../../shared/constants/gas';
-import { getAdvancedInlineGasShown } from '../../selectors';
 import { hexWEIToDecGWEI } from '../../helpers/utils/conversions.util';
 import { isLegacyTransaction } from '../../helpers/utils/transactions.util';
-
-import { useGasFeeEstimates } from '../useGasFeeEstimates';
 
 function getGasPriceEstimate(gasFeeEstimates, gasEstimateType, estimateToUse) {
   if (gasEstimateType === GAS_ESTIMATE_TYPES.LEGACY) {
@@ -18,15 +14,13 @@ function getGasPriceEstimate(gasFeeEstimates, gasEstimateType, estimateToUse) {
   return '0';
 }
 
-export function useGasPriceInputs(
-  defaultEstimateToUse = 'medium',
+export function useGasPriceInputs({
+  defaultEstimateToUse,
+  estimateToUse,
+  gasEstimateType,
+  gasFeeEstimates,
   transaction,
-) {
-  // We need the gas estimates from the GasFeeController in the background.
-  // Calling this hooks initiates polling for new gas estimates and returns the
-  // current estimate.
-  const { gasEstimateType, gasFeeEstimates } = useGasFeeEstimates();
-
+}) {
   const [initialGasPrice] = useState(
     Number(hexWEIToDecGWEI(transaction?.txParams?.gasPrice)),
   );
@@ -40,18 +34,6 @@ export function useGasPriceInputs(
   const [gasPrice, setGasPrice] = useState(
     initialGasPrice && initialFeeParamsAreCustom ? initialGasPrice : null,
   );
-
-  const userPrefersAdvancedGas = useSelector(getAdvancedInlineGasShown);
-
-  const [estimateToUse] = useState(() => {
-    if (
-      userPrefersAdvancedGas &&
-      transaction?.txParams?.maxPriorityFeePerGas &&
-      transaction?.txParams?.maxFeePerGas
-    )
-      return null;
-    return transaction?.userFeeLevel || defaultEstimateToUse;
-  });
 
   const [initialGasPriceEstimates] = useState(gasFeeEstimates);
   const gasPriceEstimatesHaveNotChanged = isEqual(
