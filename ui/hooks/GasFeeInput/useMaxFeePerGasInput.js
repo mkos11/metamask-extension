@@ -1,0 +1,85 @@
+import { useState } from 'react';
+
+import { getMaximumGasTotalInHexWei } from '../../../shared/modules/gas.utils';
+import { hexWEIToDecGWEI } from '../../helpers/utils/conversions.util';
+import { SECONDARY } from '../../helpers/constants/common';
+
+import { useCurrencyDisplay } from '../useCurrencyDisplay';
+import { useGasFeeEstimates } from '../useGasFeeEstimates';
+import { useUserPreferencedCurrency } from '../useUserPreferencedCurrency';
+import { getGasFeeEstimate } from './utils';
+
+export function useMaxFeePerGasInput(
+  estimateToUse,
+  gasLimit,
+  gasPrice,
+  supportsEIP1559,
+  transaction,
+) {
+  const {
+    currency: fiatCurrency,
+    numberOfDecimals: fiatNumberOfDecimals,
+  } = useUserPreferencedCurrency(SECONDARY);
+
+  const { gasEstimateType, gasFeeEstimates } = useGasFeeEstimates();
+
+  const [initialMaxFeePerGas] = useState(
+    supportsEIP1559 && !transaction?.txParams?.maxFeePerGas
+      ? Number(hexWEIToDecGWEI(transaction?.txParams?.gasPrice))
+      : Number(hexWEIToDecGWEI(transaction?.txParams?.maxFeePerGas)),
+  );
+
+  const [initialMatchingEstimateLevel] = useState(
+    transaction?.userFeeLevel || null,
+  );
+  const initialFeeParamsAreCustom =
+    initialMatchingEstimateLevel === 'custom' ||
+    initialMatchingEstimateLevel === null;
+
+  // This hook keeps track of a few pieces of transitional state. It is
+  // transitional because it is only used to modify a transaction in the
+  // metamask (background) state tree.
+  const [maxFeePerGas, setMaxFeePerGas] = useState(
+    initialMaxFeePerGas && initialFeeParamsAreCustom
+      ? initialMaxFeePerGas
+      : null,
+  );
+
+  const maximumCostInHexWei = getMaximumGasTotalInHexWei({
+    gasLimit,
+    gasPrice,
+    maxFeePerGas,
+  });
+
+  // We need to display thee estimated fiat currency impact of the maxFeePerGas
+  // field to the user. This hook calculates that amount. This also works for
+  // the gasPrice amount because in legacy transactions cost is always gasPrice
+  // * gasLimit.
+  const [, { value: maxFeePerGasFiat }] = useCurrencyDisplay(
+    maximumCostInHexWei,
+    {
+      numberOfDecimals: fiatNumberOfDecimals,
+      currency: fiatCurrency,
+    },
+  );
+
+  // We specify whether to use the estimate value by checking if the state
+  // value has been set. The state value is only set by user input and is wiped
+  // when the user selects an estimate. Default here is '0' to avoid bignumber
+  // errors in later calculations for nullish values.
+  const maxFeePerGasToUse =
+    maxFeePerGas ??
+    getGasFeeEstimate(
+      'suggestedMaxFeePerGas',
+      gasFeeEstimates,
+      gasEstimateType,
+      estimateToUse,
+      initialMaxFeePerGas,
+    );
+
+  return {
+    maxFeePerGas: maxFeePerGasToUse,
+    setMaxFeePerGas,
+    maxFeePerGasFiat,
+  };
+}

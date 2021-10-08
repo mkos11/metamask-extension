@@ -1,24 +1,24 @@
 import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { GAS_ESTIMATE_TYPES, GAS_LIMITS } from '../../shared/constants/gas';
+import { GAS_ESTIMATE_TYPES, GAS_LIMITS } from '../../../shared/constants/gas';
 import {
   conversionLessThan,
   conversionGreaterThan,
-} from '../../shared/modules/conversion.utils';
+} from '../../../shared/modules/conversion.utils';
 import {
   checkNetworkAndAccountSupports1559,
   getSelectedAccount,
-} from '../selectors';
-import { addHexes } from '../helpers/utils/conversions.util';
-import { isLegacyTransaction } from '../helpers/utils/transactions.util';
+} from '../../selectors';
+import { addHexes } from '../../helpers/utils/conversions.util';
+import { isLegacyTransaction } from '../../helpers/utils/transactions.util';
 import {
   bnGreaterThan,
   bnLessThan,
   bnLessThanEqualTo,
-} from '../helpers/utils/util';
-import { GAS_FORM_ERRORS } from '../helpers/constants/gas';
+} from '../../helpers/utils/util';
+import { GAS_FORM_ERRORS } from '../../helpers/constants/gas';
 
-import { useGasFeeEstimates } from './useGasFeeEstimates';
+import { useGasFeeEstimates } from '../useGasFeeEstimates';
 
 const HIGH_FEE_WARNING_MULTIPLIER = 1.5;
 
