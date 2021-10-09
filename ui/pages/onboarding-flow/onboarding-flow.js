@@ -114,7 +114,8 @@ export default function OnboardingFlow() {
           />
           <Route
             path={ONBOARDING_PRIVACY_SETTINGS_ROUTE}
-            component={PrivacySettings} />
+            component={PrivacySettings}
+          />
           <Route
             path={ONBOARDING_WELCOME}
             render={() => <OnboardingWelcome />}
